@@ -22,7 +22,7 @@ function Weather() {
     "01n": clear_icon,
     "02d": cloud_icon,
     "02n": cloud_icon,
-    "03n": cloud_icon,
+    "03d": cloud_icon,
     "03n": cloud_icon,
     "04d": drizzle_icon,
     "04n": drizzle_icon,
