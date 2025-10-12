@@ -10,12 +10,19 @@ import snow_icon from "../assets/snow.png";
 import wind_icon from "../assets/wind.png";
 import humidity_icon from "../assets/humidity.png";
 
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+
 function Weather() {
   const [city, setCity] = useState("");
 
   const [weatherData, setWeatherData] = useState(false); // state to store data coming fromo API
 
   const [cityNotFound, setCityNotFound] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const [lastSearchedCity, setLastSearchedCity] = useState("");
 
   const allIcons = {
     "01d": clear_icon,
@@ -40,6 +47,10 @@ function Weather() {
       alert("Enter City Name!");
       return;
     }
+
+    setLoading(true); // Start loading
+    setLastSearchedCity(city); // Save the city being searched
+
     try {
       const API_KEY = import.meta.env.VITE_APP_ID;
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
@@ -47,12 +58,13 @@ function Weather() {
       const response = await fetch(url); // using fetch api, to get data frov this url
 
       if (!response.ok) {
-        if(response.status === 404){
+        if (response.status === 404) {
           setCityNotFound(true);
+          setWeatherData(false); // Clear previous weather data
+        } else {
+          console.log(`Error: ${response.status}`);
         }
-        else{
-          console.log(`Error: ${response.status}`);          
-        }
+        setLoading(false); // Stop loading on error
         return;
       }
 
@@ -75,11 +87,18 @@ function Weather() {
     } catch (error) {
       setWeatherData(false);
       console.error("Error in Fetching Weather Data: ", error);
+    } finally {
+      setLoading(false); // Stop loading after fetch completes
     }
   };
 
   const handleCityChange = (event) => {
     setCity(event.target.value);
+  };
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      fetchWeather();
+    }
   };
   const handleOnclick = () => {
     fetchWeather();
@@ -94,11 +113,34 @@ function Weather() {
           placeholder="Enter City"
           value={city}
           onChange={handleCityChange}
+          onKeyDown={handleKeyPress}
         />
         <img src={search_icon} alt="" onClick={handleOnclick} />
       </div>
 
-      {weatherData ? (
+      {loading && city === lastSearchedCity ? (
+        <>
+        <Skeleton circle={true} height={150} width={150} style={{ margin: '20px auto' }} />
+        <Skeleton height={40} width={150} style={{ margin: '10px auto' }} />
+        <Skeleton height={30} width={200} style={{ margin: '10px auto' }} />
+        <div className="weather-data">
+          <div className="col">
+            <Skeleton circle={true} height={40} width={40} />
+            <div>
+              <Skeleton height={20} width={60} />
+              <Skeleton height={15} width={80} />
+            </div>
+          </div>
+          <div className="col">
+            <Skeleton circle={true} height={40} width={40} />
+            <div>
+              <Skeleton height={20} width={60} />
+              <Skeleton height={15} width={80} />
+            </div>
+          </div>
+        </div>
+      </>
+      ) : weatherData && city === lastSearchedCity ? (
         <>
           <img src={weatherData.icon} alt="" className="weather-icon" />
           {/* <img
@@ -127,11 +169,13 @@ function Weather() {
       ) : (
         <></>
       )}
-      {
-        cityNotFound? <>
-          <ErrorComponent/>
-        </> : <></>
-      }
+      {cityNotFound && city === lastSearchedCity ? (
+        <>
+          <ErrorComponent />
+        </>
+      ) : (
+        <></>
+      )}
     </div>
   );
 }
